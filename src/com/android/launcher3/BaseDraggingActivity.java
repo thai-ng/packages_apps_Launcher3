@@ -44,6 +44,7 @@ import com.android.launcher3.util.RunnableList;
 import com.android.launcher3.util.Themes;
 import com.android.launcher3.util.TraceHelper;
 import com.android.launcher3.util.WindowBounds;
+import com.android.launcher3.hinting.AppHintingLayout;
 
 /**
  * Extension of BaseActivity allowing support for drag-n-drop
@@ -139,6 +140,8 @@ public abstract class BaseDraggingActivity extends BaseActivity
     }
 
     public abstract <T extends View> T getOverviewPanel();
+
+    public abstract AppHintingLayout getAppHintingLayout();
 
     public abstract View getRootView();
 

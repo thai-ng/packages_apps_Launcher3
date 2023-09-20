@@ -301,6 +301,8 @@
     <dimen name="taskbar_icon_size_kids">32dp</dimen>
     <dimen name="taskbar_all_apps_button_translation_x_offset">6dp</dimen>
 
+    <!-- The amount to inset the drop target regions from the edge of the display -->
+     <dimen name="drop_layout_display_margin">32dp</dimen>
 
     <!-- Transient taskbar -->
     <dimen name="transient_taskbar_padding">12dp</dimen>
@@ -317,7 +319,7 @@
     <!-- Taskbar swipe up thresholds -->
     <dimen name="taskbar_from_nav_threshold">40dp</dimen>
     <dimen name="taskbar_app_window_threshold">88dp</dimen>
-    <dimen name="taskbar_home_overview_threshold">156dp</dimen>
+    <dimen name="taskbar_home_overview_threshold">600dp</dimen>
     <dimen name="taskbar_catch_up_threshold">264dp</dimen>
     <!-- Taskbar swipe down threshold -->
     <dimen name="taskbar_to_nav_threshold">24dp</dimen>

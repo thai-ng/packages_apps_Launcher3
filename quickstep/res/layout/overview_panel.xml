@@ -29,4 +29,10 @@
         android:id="@+id/overview_actions_view"
         layout="@layout/overview_actions_container" />
 
+    <com.android.launcher3.hinting.AppHintingLayout
+        android:id="@+id/app_hinting_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+    />
+
 </merge>

@@ -148,6 +148,7 @@ import com.android.launcher3.dragndrop.LauncherDragController;
 import com.android.launcher3.folder.Folder;
 import com.android.launcher3.folder.FolderGridOrganizer;
 import com.android.launcher3.folder.FolderIcon;
+import com.android.launcher3.hinting.AppHintingLayout;
 import com.android.launcher3.icons.IconCache;
 import com.android.launcher3.keyboard.ViewGroupFocusHelper;
 import com.android.launcher3.logger.LauncherAtom;
@@ -406,6 +407,8 @@ public class Launcher extends StatefulActivity<LauncherState>
     private BaseSearchConfig mBaseSearchConfig;
 
     private CellPosMapper mCellPosMapper = CellPosMapper.DEFAULT;
+
+    private AppHintingLayout mAppHintingLayout;
 
     @Override
     @TargetApi(Build.VERSION_CODES.S)
@@ -1323,6 +1326,7 @@ public class Launcher extends StatefulActivity<LauncherState>
         mWorkspace = mDragLayer.findViewById(R.id.workspace);
         mWorkspace.initParentViews(mDragLayer);
         mOverviewPanel = findViewById(R.id.overview_panel);
+        mAppHintingLayout = findViewById(R.id.app_hinting_layout);
         mHotseat = findViewById(R.id.hotseat);
         mHotseat.setWorkspace(mWorkspace);
 
@@ -1599,6 +1603,11 @@ public class Launcher extends StatefulActivity<LauncherState>
 
     public <T extends View> T getOverviewPanel() {
         return (T) mOverviewPanel;
+    }
+
+    @Override
+    public AppHintingLayout getAppHintingLayout() {
+        return mAppHintingLayout;
     }
 
     public DropTargetBar getDropTargetBar() {

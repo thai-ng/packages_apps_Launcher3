@@ -30,12 +30,16 @@ import static com.android.launcher3.anim.Interpolators.OVERSHOOT_1_2;
 import static com.android.launcher3.logging.StatsLogManager.LAUNCHER_STATE_BACKGROUND;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.IGNORE;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_HOME_GESTURE;
+import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_OVERVIEW_ACTIONS_SPLIT;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_OVERVIEW_GESTURE;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_QUICKSWITCH_LEFT;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_QUICKSWITCH_RIGHT;
 import static com.android.launcher3.uioverrides.QuickstepLauncher.ENABLE_PIP_KEEP_CLEAR_ALGORITHM;
 import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
 import static com.android.launcher3.util.Executors.UI_HELPER_EXECUTOR;
+import static com.android.launcher3.util.SplitConfigurationOptions.STAGE_POSITION_BOTTOM_OR_RIGHT;
+import static com.android.launcher3.util.SplitConfigurationOptions.STAGE_POSITION_TOP_OR_LEFT;
+import static com.android.launcher3.util.SplitConfigurationOptions.STAGE_POSITION_UNDEFINED;
 import static com.android.launcher3.util.SystemUiController.UI_STATE_FULLSCREEN_TASK;
 import static com.android.launcher3.util.VibratorWrapper.OVERVIEW_HAPTIC;
 import static com.android.launcher3.util.window.RefreshRateTracker.getSingleFrameMs;
@@ -97,6 +101,7 @@ import com.android.launcher3.Utilities;
 import com.android.launcher3.anim.AnimationSuccessListener;
 import com.android.launcher3.anim.AnimatorPlaybackController;
 import com.android.launcher3.dragndrop.DragView;
+import com.android.launcher3.hinting.AppHintingLayout.AppHintResult;
 import com.android.launcher3.logging.StatsLogManager;
 import com.android.launcher3.logging.StatsLogManager.StatsLogger;
 import com.android.launcher3.statemanager.BaseState;
@@ -189,6 +194,8 @@ public abstract class AbsSwipeUpHandler<T extends StatefulActivity<S>,
             };
 
     private static int FLAG_COUNT = 0;
+    private boolean mFolded;
+
     private static int getNextStateFlag(String name) {
         if (DEBUG_STATES) {
             STATE_NAMES.add(name);
@@ -295,7 +302,6 @@ public abstract class AbsSwipeUpHandler<T extends StatefulActivity<S>,
 
     private boolean mGestureStarted;
     private boolean mLogDirectionUpOrLeft = true;
-    private PointF mDownPos;
     private boolean mIsLikelyToStartNewTask;
 
     private final long mTouchTimeMs;
@@ -393,6 +399,10 @@ public abstract class AbsSwipeUpHandler<T extends StatefulActivity<S>,
             return ActiveGestureErrorDetector.GestureEvent.STATE_LAUNCHER_DRAWN;
         }
         return null;
+    }
+
+    public void setFoldedState(boolean folded) {
+        mFolded = folded;
     }
 
     private void initStateCallbacks() {
@@ -937,6 +947,11 @@ public abstract class AbsSwipeUpHandler<T extends StatefulActivity<S>,
         mActivityInterface.closeOverlay();
         TaskUtils.closeSystemWindowsAsync(CLOSE_SYSTEM_WINDOWS_REASON_RECENTS);
 
+        if (!mRecentsView.getRunningTaskView().containsMultipleTasks() && !mFolded) {
+            Log.d("RECENTS SWIPE", "showing app hinting");
+            mActivityInterface.getCreatedActivity().getAppHintingLayout().show();
+        }
+
         if (mRecentsView != null) {
             final View rv = mRecentsView;
             mRecentsView.getViewTreeObserver().addOnDrawListener(new OnDrawListener() {
@@ -1228,6 +1243,10 @@ public abstract class AbsSwipeUpHandler<T extends StatefulActivity<S>,
     @UiThread
     private void handleNormalGestureEnd(
             float endVelocityPxPerMs, boolean isFling, PointF velocityPxPerMs, boolean isCancel) {
+
+        Log.d("RECENTS SWIPE", "hiding app hinting");
+        mActivityInterface.getCreatedActivity().getAppHintingLayout().hide();
+
         long duration = MAX_SWIPE_DURATION;
         float currentShift = mCurrentShift.value;
         final GestureEndTarget endTarget = calculateEndTarget(
@@ -1279,6 +1298,25 @@ public abstract class AbsSwipeUpHandler<T extends StatefulActivity<S>,
             }
         } else if (endTarget == RECENTS) {
             if (mRecentsView != null) {
+                AppHintResult hintingResult = mActivityInterface.getCreatedActivity().getAppHintingLayout().getHintingResult();
+                Log.d(TAG, "Hinting result: " + hintingResult);
+
+                if (hintingResult != AppHintResult.NONE) {
+                    mRecentsView.post(() -> {
+                        int taskId = mRecentsView.getRunningTaskView().getTaskIds()[0];
+                        int stagePosition = STAGE_POSITION_UNDEFINED;
+                        if (hintingResult == AppHintResult.LEFT) {
+                            Log.d(TAG, "Got hint left, splitting with left task " + taskId);
+                            stagePosition = STAGE_POSITION_TOP_OR_LEFT;
+                        } else if (hintingResult == AppHintResult.RIGHT) {
+                            Log.d(TAG, "Got hint right, splitting with right task " + taskId);
+                            stagePosition = STAGE_POSITION_BOTTOM_OR_RIGHT;
+                        }
+
+                        mRecentsView.initiateSplitSelect(mRecentsView.getRunningTaskView(), stagePosition, LAUNCHER_OVERVIEW_ACTIONS_SPLIT);
+                    });
+                }
+                
                 int nearestPage = mRecentsView.getDestinationPage();
                 if (nearestPage == INVALID_PAGE) {
                     // Allow the snap to invalid page to catch future error cases.
@@ -2256,7 +2294,13 @@ public abstract class AbsSwipeUpHandler<T extends StatefulActivity<S>,
                 if (setRecentsScroll) {
                     taskViewSimulator.setScroll(scrollOffset);
                 }
+
+                taskViewSimulator.taskPrimaryTranslation.value = 
+                    mActivityInterface.getCurrentTouchPosition().x - (mDownPos.x + mStartSecondaryDisplacement);
+
                 taskViewSimulator.apply(remoteHandle.getTransformParams());
+                // Now we try to draw the drop hints
+                mActivityInterface.getCreatedActivity().getAppHintingLayout().update(taskViewSimulator.getCurrentRect());
             }
         }
         ProtoTracer.INSTANCE.get(mContext).scheduleFrameUpdate();

@@ -60,6 +60,7 @@ import com.android.launcher3.anim.Interpolators;
 import com.android.launcher3.anim.PendingAnimation;
 import com.android.launcher3.compat.AccessibilityManagerCompat;
 import com.android.launcher3.model.data.ItemInfo;
+import com.android.launcher3.hinting.AppHintingLayout;
 import com.android.launcher3.statemanager.StateManager;
 import com.android.launcher3.statemanager.StateManager.AtomicAnimationFactory;
 import com.android.launcher3.statemanager.StateManager.StateHandler;
@@ -105,6 +106,7 @@ public final class RecentsActivity extends StatefulActivity<RecentsState> {
     private RecentsDragLayer mDragLayer;
     private ScrimView mScrimView;
     private FallbackRecentsView mFallbackRecentsView;
+    private AppHintingLayout mAppHintingLayout;
     private OverviewActionsView mActionsView;
     private TISBindHelper mTISBindHelper;
     private @Nullable TaskbarManager mTaskbarManager;
@@ -129,6 +131,7 @@ public final class RecentsActivity extends StatefulActivity<RecentsState> {
         mDragLayer = findViewById(R.id.drag_layer);
         mScrimView = findViewById(R.id.scrim_view);
         mFallbackRecentsView = findViewById(R.id.overview_panel);
+        mAppHintingLayout = findViewById(R.id.app_hinting_layout);
         mActionsView = findViewById(R.id.overview_actions_view);
         SYSUI_PROGRESS.set(getRootView().getSysUiScrim(), 0f);
 
@@ -210,6 +213,11 @@ public final class RecentsActivity extends StatefulActivity<RecentsState> {
     @Override
     public <T extends View> T getOverviewPanel() {
         return (T) mFallbackRecentsView;
+    }
+    
+    @Override
+    public AppHintingLayout getAppHintingLayout() {
+        return mAppHintingLayout;
     }
 
     public OverviewActionsView getActionsView() {

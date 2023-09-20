@@ -29,6 +29,8 @@ import static com.android.quickstep.views.RecentsView.FULLSCREEN_PROGRESS;
 import static com.android.quickstep.views.RecentsView.RECENTS_SCALE_PROPERTY;
 import static com.android.quickstep.views.RecentsView.TASK_SECONDARY_TRANSLATION;
 
+import static android.view.MotionEvent.ACTION_DOWN;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -85,6 +87,9 @@ public abstract class BaseActivityInterface<STATE_TYPE extends BaseState<STATE_T
     private final STATE_TYPE mBackgroundState;
 
     private STATE_TYPE mTargetState;
+
+    private PointF mDownPos = new PointF();
+    private PointF mCurrentTouchPos = new PointF();
 
     @Nullable private Runnable mOnInitBackgroundStateUICallback = null;
 
@@ -444,6 +449,18 @@ public abstract class BaseActivityInterface<STATE_TYPE extends BaseState<STATE_T
             mOnInitBackgroundStateUICallback.run();
             mOnInitBackgroundStateUICallback = null;
         }
+    }
+
+    public PointF getCurrentTouchPosition() {
+        return mCurrentTouchPos;
+    }
+
+    public void setCurrentTouchPosition(float x, float y, int action) {
+        if (action == ACTION_DOWN) {
+            mDownPos.set(x, y);
+        }
+
+        mCurrentTouchPos.set(x, y);
     }
 
     public interface AnimationFactory {
