@@ -90,7 +90,6 @@ public class AppHintingLayout extends LinearLayout {
         super(context, attrs, defStyleAttr, defStyleRes);
 
         mContext = context;
-        mStatusBarManager = context.getSystemService(StatusBarManager.class);
         mWindowManager = context.getSystemService(WindowManager.class);
 
         mLastConfiguration.setTo(context.getResources().getConfiguration());
