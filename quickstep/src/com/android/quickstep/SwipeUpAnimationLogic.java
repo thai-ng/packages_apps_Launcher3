@@ -22,6 +22,7 @@ import android.animation.Animator;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.Matrix.ScaleToFit;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.view.RemoteAnimationTarget;
@@ -60,6 +61,10 @@ public abstract class SwipeUpAnimationLogic implements
     protected final Context mContext;
     protected final RecentsAnimationDeviceState mDeviceState;
     protected final GestureState mGestureState;
+
+    // The start of 2ndary displacement, to calculate shift in other axis
+    protected float mStartSecondaryDisplacement;
+    protected PointF mDownPos = new PointF();
 
     protected RemoteTargetHandle[] mRemoteTargetHandles;
 
@@ -132,6 +137,11 @@ public abstract class SwipeUpAnimationLogic implements
         }
 
         mCurrentShift.updateValue(shift);
+    }
+
+    public void setTouchInfo(PointF touchDown, float startSecondaryDisplacement) {
+        mDownPos = touchDown;
+        mStartSecondaryDisplacement = startSecondaryDisplacement;
     }
 
     /**

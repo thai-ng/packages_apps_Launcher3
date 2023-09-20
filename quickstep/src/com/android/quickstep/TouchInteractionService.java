@@ -61,6 +61,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Region;
 import android.graphics.drawable.Icon;
+import android.hardware.devicestate.DeviceStateManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -160,6 +161,7 @@ public class TouchInteractionService extends Service
     private static final String HAS_ENABLED_QUICKSTEP_ONCE = "launcher.has_enabled_quickstep_once";
 
     private final TISBinder mTISBinder = new TISBinder(this);
+    private DeviceStateManager mDeviceStateManager;
 
     /**
      * Local IOverviewProxy implementation with some methods for local components
@@ -475,6 +477,10 @@ public class TouchInteractionService extends Service
     private TaskbarManager mTaskbarManager;
     private Function<GestureState, AnimatedFloat> mSwipeUpProxyProvider = i -> null;
 
+    private boolean mIsFolded;
+
+    private DeviceStateManager.FoldStateListener mFoldStateListener;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -487,6 +493,10 @@ public class TouchInteractionService extends Service
         mRotationTouchHelper = mDeviceState.getRotationTouchHelper();
         BootAwarePreloader.start(this);
 
+        mDeviceStateManager = this.getSystemService(DeviceStateManager.class);
+        mFoldStateListener = new DeviceStateManager.FoldStateListener(this.getApplicationContext(), this::onFoldStateChanged);
+        mDeviceStateManager.registerCallback(this.getMainExecutor(), mFoldStateListener);
+
         // Call runOnUserUnlocked() before any other callbacks to ensure everything is initialized.
         mDeviceState.runOnUserUnlocked(this::onUserUnlocked);
         mDeviceState.runOnUserUnlocked(mTaskbarManager::onUserUnlocked);
@@ -494,6 +504,10 @@ public class TouchInteractionService extends Service
 
         ProtoTracer.INSTANCE.get(this).add(this);
         sConnected = true;
+    }
+
+    private void onFoldStateChanged(boolean folded) {
+        mIsFolded = folded;
     }
 
     private void disposeEventHandlers(String reason) {
@@ -661,6 +675,9 @@ public class TouchInteractionService extends Service
             mInputConsumer.unregisterInputConsumer();
             mOverviewComponentObserver.onDestroy();
         }
+
+        mDeviceStateManager.unregisterCallback(mFoldStateListener);
+
         disposeEventHandlers("TouchInteractionService onDestroy()");
         mDeviceState.destroy();
         SystemUiProxy.INSTANCE.get(this).clearProxy();
@@ -698,12 +715,12 @@ public class TouchInteractionService extends Service
         Object traceToken = TraceHelper.INSTANCE.beginFlagsOverride(
                 TraceHelper.FLAG_ALLOW_BINDER_TRACKING);
 
-        final int action = event.getActionMasked();
-        // Note this will create a new consumer every mouse click, as after ACTION_UP from the click
-        // an ACTION_HOVER_ENTER will fire as well.
-        boolean isHoverActionWithoutConsumer =
-                event.isHoverEvent() && (mUncheckedConsumer.getType() & TYPE_CURSOR_HOVER) == 0;
-        if (action == ACTION_DOWN || isHoverActionWithoutConsumer) {
+        // Log current touch position to start calculating app hinting
+        LauncherActivityInterface.INSTANCE.setCurrentTouchPosition(event.getX(), event.getY(), event.getAction());
+        FallbackActivityInterface.INSTANCE.setCurrentTouchPosition(event.getX(), event.getY(), event.getAction());
+
+        final int action = event.getAction();
+        if (action == ACTION_DOWN) {
             mRotationTouchHelper.setOrientationTransformIfNeeded(event);
 
             if ((!mDeviceState.isOneHandedModeActive()
@@ -1107,7 +1124,7 @@ public class TouchInteractionService extends Service
         final boolean disableHorizontalSwipe = mDeviceState.isInExclusionRegion(event);
         return new OtherActivityInputConsumer(this, mDeviceState, mTaskAnimationManager,
                 gestureState, shouldDefer, this::onConsumerInactive,
-                mInputMonitorCompat, mInputEventReceiver, disableHorizontalSwipe, factory);
+                mInputMonitorCompat, mInputEventReceiver, disableHorizontalSwipe, factory, mIsFolded);
     }
 
     private InputConsumer createDeviceLockedInputConsumer(

@@ -84,6 +84,7 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
     public static final int OVERVIEW_MIN_DEGREES = 15;
 
     private final RecentsAnimationDeviceState mDeviceState;
+    private final boolean mIsFolded;
     private final NavBarPosition mNavBarPosition;
     private final TaskAnimationManager mTaskAnimationManager;
     private final GestureState mGestureState;
@@ -126,14 +127,16 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
 
     // Might be displacement in X or Y, depending on the direction we are swiping from the nav bar.
     private float mStartDisplacement;
+    private float mStartSecondaryDisplacement;
 
     public OtherActivityInputConsumer(Context base, RecentsAnimationDeviceState deviceState,
             TaskAnimationManager taskAnimationManager, GestureState gestureState,
             boolean isDeferredDownTarget, Consumer<OtherActivityInputConsumer> onCompleteCallback,
             InputMonitorCompat inputMonitorCompat, InputEventReceiver inputEventReceiver,
-            boolean disableHorizontalSwipe, Factory handlerFactory) {
+            boolean disableHorizontalSwipe, Factory handlerFactory, boolean isFolded) {
         super(base);
         mDeviceState = deviceState;
+        this.mIsFolded = isFolded;
         mNavBarPosition = mDeviceState.getNavBarPosition();
         mTaskAnimationManager = taskAnimationManager;
         mGestureState = gestureState;
@@ -278,6 +281,8 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
                 float displacementX = mLastPos.x - mDownPos.x;
                 float displacementY = mLastPos.y - mDownPos.y;
 
+                float secondaryDisplacement = getSecondaryDisplacement(displacementX, displacementY);
+
                 if (!mPassedWindowMoveSlop) {
                     if (!mIsDeferredDownTarget) {
                         // Normal gesture, ensure we pass the drag slop before we start tracking
@@ -285,6 +290,8 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
                         if (Math.abs(displacement) > mTouchSlop) {
                             mPassedWindowMoveSlop = true;
                             mStartDisplacement = Math.min(displacement, -mTouchSlop);
+
+                            mStartSecondaryDisplacement = secondaryDisplacement;
                         }
                     }
                 }
@@ -341,6 +348,8 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
                         if (!mPassedWindowMoveSlop) {
                             mPassedWindowMoveSlop = true;
                             mStartDisplacement = Math.min(displacement, -mTouchSlop);
+                            mStartSecondaryDisplacement = secondaryDisplacement;
+
                         }
                         notifyGestureStarted(isLikelyToStartNewTask);
                     }
@@ -388,12 +397,15 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
         // Once we detect the gesture, we can enable batching to reduce further updates
         mInputEventReceiver.setBatchingEnabled(true);
 
+        mInteractionHandler.setTouchInfo(mDownPos, mStartSecondaryDisplacement);
+
         // Notify the handler that the gesture has actually started
         mInteractionHandler.onGestureStarted(isLikelyToStartNewTask);
     }
 
     private void startTouchTrackingForWindowAnimation(long touchTimeMs) {
         mInteractionHandler = mHandlerFactory.newHandler(mGestureState, touchTimeMs);
+        mInteractionHandler.setFoldedState(mIsFolded);
         mInteractionHandler.setGestureEndCallback(this::onInteractionGestureFinished);
         mMotionPauseDetector.setOnMotionPauseListener(mInteractionHandler.getMotionPauseListener());
         mInteractionHandler.initWhenReady();
@@ -495,6 +507,10 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
         if (mActiveCallbacks != null && mInteractionHandler != null) {
             mActiveCallbacks.removeListener(mInteractionHandler);
         }
+    }
+
+    private float getSecondaryDisplacement(float displacementX, float displacementY) {
+        return (mNavBarPosition.isRightEdge() || mNavBarPosition.isLeftEdge()) ? displacementY : displacementX;
     }
 
     private float getDisplacement(MotionEvent ev) {

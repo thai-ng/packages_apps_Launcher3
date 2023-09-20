@@ -45,6 +45,7 @@ import com.android.launcher3.dragndrop.DragController;
 import com.android.launcher3.dragndrop.DragOptions;
 import com.android.launcher3.dragndrop.DraggableView;
 import com.android.launcher3.graphics.DragPreviewProvider;
+import com.android.launcher3.hinting.AppHintingLayout;
 import com.android.launcher3.icons.FastBitmapDrawable;
 import com.android.launcher3.model.BgDataModel;
 import com.android.launcher3.model.StringCache;
@@ -205,6 +206,11 @@ public class SecondaryDisplayLauncher extends BaseDraggingActivity
 
     @Override
     public <T extends View> T getOverviewPanel() {
+        return null;
+    }
+
+    @Override
+    public AppHintingLayout getAppHintingLayout() {
         return null;
     }
 
