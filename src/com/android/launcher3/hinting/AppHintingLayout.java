@@ -143,6 +143,7 @@ public class AppHintingLayout extends LinearLayout {
     }
 
     public void onConfigChanged(Configuration newConfig) {
+        Slog.d(TAG, "Configuration changed " + newConfig);
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
                 && getOrientation() != HORIZONTAL) {
             Slog.d(TAG, "Config changed, setting horizontal layout");

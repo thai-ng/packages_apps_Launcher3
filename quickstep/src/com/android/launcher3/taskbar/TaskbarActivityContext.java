@@ -18,6 +18,7 @@ package com.android.launcher3.taskbar;
 import static android.content.pm.PackageManager.FEATURE_PC;
 import static android.os.Trace.TRACE_TAG_APP;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
 import static android.view.WindowManager.LayoutParams.TYPE_NAVIGATION_BAR_PANEL;
@@ -345,7 +346,7 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
                     | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         }
         WindowManager.LayoutParams windowLayoutParams = new WindowManager.LayoutParams(
-                isVerticalBarLayout ? mLastRequestedNonFullscreenHeight : MATCH_PARENT,
+                isVerticalBarLayout ? mLastRequestedNonFullscreenHeight : WRAP_CONTENT,
                 isVerticalBarLayout ? MATCH_PARENT : mLastRequestedNonFullscreenHeight,
                 type,
                 windowFlags,
@@ -353,8 +354,8 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
         windowLayoutParams.setTitle(title);
         windowLayoutParams.packageName = getPackageName();
         windowLayoutParams.gravity = !isVerticalBarLayout ?
-                Gravity.BOTTOM :
-                Gravity.END; // TODO(b/230394142): seascape
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL :
+                Gravity.END | Gravity.CENTER_VERTICAL; // TODO(b/230394142): seascape
 
         windowLayoutParams.setFitInsetsTypes(0);
         windowLayoutParams.receiveInsetsIgnoringZOrder = true;
@@ -1090,6 +1091,29 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
         if (mDragLayer.isAttachedToWindow()) {
             mWindowManager.updateViewLayout(mDragLayer, mWindowLayoutParams);
         }
+    }
+
+    public void moveTaskbarForSplit(int side) {
+        Log.d(TAG, "Moving task for split. side: " + side);
+        DeviceProfile deviceProfile = getDeviceProfile();
+        // Taskbar is on the logical bottom of the screen
+        boolean isVerticalBarLayout = TaskbarManager.isPhoneMode(deviceProfile) &&
+                deviceProfile.isLandscape;
+
+        Log.d(TAG, "Moving task for split. side: " + side);
+
+        if (side == 0) {
+            mWindowLayoutParams.gravity = !isVerticalBarLayout ?
+                    (Gravity.BOTTOM | Gravity.END) : (Gravity.END | Gravity.CENTER_VERTICAL);
+        } else if (side == 1) {
+            mWindowLayoutParams.gravity = !isVerticalBarLayout ?
+                    (Gravity.BOTTOM | Gravity.START) : (Gravity.END | Gravity.CENTER_VERTICAL);
+        } else {
+            mWindowLayoutParams.gravity = !isVerticalBarLayout ?
+                    (Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL) : (Gravity.END | Gravity.CENTER_VERTICAL);
+        }
+
+        notifyUpdateLayoutParams();
     }
 
     public void showPopupMenuForIcon(BubbleTextView btv) {

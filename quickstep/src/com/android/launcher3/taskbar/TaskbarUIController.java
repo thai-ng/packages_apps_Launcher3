@@ -151,6 +151,10 @@ public class TaskbarUIController {
         mControllers.taskbarActivityContext.startTranslationSpring();
     }
 
+    public void moveTaskbarForSplit(int side) {
+        mControllers.taskbarActivityContext.moveTaskbarForSplit(side);
+    }
+
     /*
      * @param ev MotionEvent in screen coordinates.
      * @return Whether any Taskbar item could handle the given MotionEvent if given the chance.
