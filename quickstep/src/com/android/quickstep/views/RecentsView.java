@@ -3264,6 +3264,8 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
                         resetFromSplitSelectionState()));
 
         pendingAnimation.buildAnim().start();
+
+        mSizeStrategy.getTaskbarController().moveTaskbarForSplit(-1);
     }
 
     /**
@@ -4567,6 +4569,8 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
         if (DesktopTaskView.DESKTOP_IS_PROTO2_ENABLED) {
             updateDesktopTaskVisibility(false /* visible */);
         }
+
+        mSizeStrategy.getTaskbarController().moveTaskbarForSplit(stagePosition);
     }
 
     /**
@@ -4591,6 +4595,8 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
         if (DesktopTaskView.DESKTOP_IS_PROTO2_ENABLED) {
             updateDesktopTaskVisibility(false /* visible */);
         }
+
+        mSizeStrategy.getTaskbarController().moveTaskbarForSplit(splitSelectSource.position.stagePosition);
     }
 
     private void updateDesktopTaskVisibility(boolean visible) {
@@ -4661,6 +4667,9 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
         if (canLaunchFullscreenTask()) {
             return false;
         }
+
+        mSizeStrategy.getTaskbarController().moveTaskbarForSplit(-1);
+
         if (mSplitSelectStateController.isBothSplitAppsConfirmed()) {
             return true;
         }
@@ -4729,6 +4738,7 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
         ObjectAnimator tvFade = ObjectAnimator.ofFloat(this, RecentsView.CONTENT_ALPHA,1, 0);
         pendingAnimation.add(tvFade, DEACCEL_2, SpringProperty.DEFAULT);
         pendingAnimation.buildAnim().start();
+
         return true;
     }
 
