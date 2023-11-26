@@ -725,8 +725,7 @@ public class TouchInteractionService extends Service
 
             if ((!mDeviceState.isOneHandedModeActive()
                     && mRotationTouchHelper.isInSwipeUpTouchRegion(event,
-                    mOverviewComponentObserver.getActivityInterface()))
-                    || isHoverActionWithoutConsumer) {
+                    mOverviewComponentObserver.getActivityInterface()))) {
                 // Clone the previous gesture state since onConsumerAboutToBeSwitched might trigger
                 // onConsumerInactive and wipe the previous gesture state
                 GestureState prevGestureState = new GestureState(mGestureState);
